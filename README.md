@@ -229,40 +229,6 @@ The following were intentionally excluded from this prototype scope:
 
 ---
 
-## Suggested Next Steps for a Real Pilot
-
-1. **Validate on real OIL HSSE text** (Most Critical)
-   Collect 200-500 genuine field reports (anonymised), have HSE SME label for SIF and LSR.
-   Re-evaluate the model. Expect accuracy to drop to 75-85% range.
-
-2. **Expand and diversify the labeled dataset**
-   333 clean templates are too separable. Real reports have abbreviations, regional language
-   mixing (Assamese/Hindi), OCR errors, and ambiguous phrasing.
-   Target 1,000+ unique real reports before production retraining.
-
-3. **Human-in-the-loop triage (mandatory)**
-   Any SIF-Potential flag must be reviewed by a qualified Safety Officer before operational action.
-   The model is a prioritisation aid, not a decision maker.
-   The Statutory Triage Review sign-off in the dashboard is the correct pattern.
-
-4. **Sentence-transformer fine-tuning**
-   Replace the TF-IDF vectoriser with a domain-adapted sentence encoder
-   (all-MiniLM-L6-v2 or petroleum-safety fine-tuned BERT) for better generalisation.
-
-5. **Add missing IOGP LSR classes**
-   Collect and label Work Authorisation and Bypassing Safety Controls violations,
-   retrain LSR classifier to cover all 9 rules.
-
-6. **Retraining pipeline**
-   Trigger quarterly or when 500+ new real labeled records are available.
-   sif_model_backup.joblib rollback checkpoint is already in place.
-
-7. **Security hardening for pilot deployment**
-   JWT authentication, rate limiting, role-based endpoint access, HTTPS via Nginx,
-   structured audit logging before any deployment on an OIL internal network.
-
----
-
 ## Project Structure
 
 ```
