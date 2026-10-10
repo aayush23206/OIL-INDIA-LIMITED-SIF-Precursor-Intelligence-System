@@ -5,6 +5,24 @@ import './styles.css';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8000';
 
+function useCountUp(target, duration = 1400, start = true) {
+  const [val, setVal] = useState(0);
+  useEffect(() => {
+    if (!start) return;
+    let frame;
+    const startTime = performance.now();
+    const tick = (now) => {
+      const progress = Math.min((now - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setVal(Math.round(eased * target));
+      if (progress < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [target, duration, start]);
+  return val;
+}
+
 const sampleReports = [
   'Contractor was working on an energized MCC panel at Duliajan without verifying isolation. No LOTO tag observed. Near miss.',
   'Welding contractor commenced hot work on a crude oil transfer line at Moran without a hot work permit. Gas test not performed.',
@@ -264,10 +282,7 @@ function App() {
         </div>
       </header>
       <main id="main-content" tabIndex="-1">
-        {active === 'overview' && <section className="hero-section reveal" id="top">
-          <div className="hero-copy"><p className="eyebrow"><span /> OIL CORPORATE HSSE DIRECTORATE</p><h1>Predict risk<br /><em>before it becomes a fatality.</em></h1><p className="hero-lede">SIF Precursor Intelligence System identifies high-energy exposures in unsafe acts, unsafe conditions and near-miss reports across OIL operations.</p><div className="hero-actions"><button className="primary-button" onClick={() => navigate('analyzer')}>Analyze a report <ArrowUpRight size={17} /></button><button className="text-button" onClick={() => navigate('sites')}>View site priorities <MapPin size={16} /></button></div></div>
-          <div className="hero-panel"><video ref={heroVideoRef} className="hero-video" autoPlay muted loop playsInline preload="auto" src="/assets/videos/refinery-hero.mp4" onEnded={(e) => { try { e.currentTarget.currentTime = 0; e.currentTarget.play().catch(() => {}); } catch (_) {} }}><source src="/assets/videos/refinery-hero.mp4" type="video/mp4" /></video><div className="panel-kicker"><Activity size={16} /> Operational view <span>FY 2025-26</span></div><div className="hero-number">3,000<small> reports monitored</small></div><div className="hero-divider" /><div className="hero-mini-grid"><div><strong>29.9%</strong><span>SIF-potential</span></div><div><strong>06</strong><span>priority rules</span></div><div><strong>14 min</strong><span>triage SLA</span></div></div><div className="panel-foot"><span className="pulse" /> Model status: {apiLive ? 'connected to OIL API' : 'local demonstration engine'}</div></div>
-        </section>}
+        {active === 'overview' && <HeroSection navigate={navigate} apiLive={apiLive} heroVideoRef={heroVideoRef} />}
         {active === 'overview' && <div className="alert-ticker"><div className="ticker-label"><Siren size={14} /> SIF ALERTS TODAY</div><div className="ticker-track"><span><b>03 priority cases</b> require statutory review</span><span>Rajasthan: bypassed safety controls detected</span><span>Duliajan: Energy Isolation remains the leading precursor</span></div><div className="ticker-date">09 SEP 2026</div></div>}
         <div className="sub-header"><div className="sub-header-inner"><span>Corporate HSSE Directorate</span><span className="slash">/</span><span>SIF Precursor Intelligence System</span><span className={apiLive ? 'system-state live' : 'system-state'}><i />{apiLive ? 'Live model connected' : 'Demo mode'}</span></div></div>
 
@@ -295,7 +310,16 @@ function App() {
           <FooterLinks title="Governance" items={['Complaint Handling System', 'Preservation of Documents and Archival Policy', 'Memorandum of Understanding']} />
           <FooterLinks title="Public Information" items={["Citizen's Charter", 'Website Policies']} />
         </div>
-        <div className="footer-bottom">© Oil India Limited · Ministry of Petroleum & Natural Gas · Government of India <span>SPIS prototype · Synthetic demonstration data</span></div>
+        <div className="footer-spis">
+          <span className="footer-spis-badge"><Sparkles size={13} /> SPIS</span>
+          <span>SIF Precursor Intelligence System · Built for Smart India Hackathon 2024</span>
+          <div className="footer-spis-links">
+            <button onClick={() => {}} aria-label="GitHub repository">⌥ GitHub</button>
+            <button onClick={() => {}} aria-label="API documentation">⌘ API Docs</button>
+            <button onClick={() => {}} aria-label="Model info">⚗ Model Info</button>
+          </div>
+        </div>
+        <div className="footer-bottom">© Oil India Limited · Ministry of Petroleum &amp; Natural Gas · Government of India <span>SPIS prototype · Synthetic demonstration data · Not for operational use</span></div>
       </footer>
     </div>
   );
@@ -361,25 +385,251 @@ function Metric({ icon, value, label, note, danger }) { return <div className={d
 function SiteCard({ profile, siteData, sitesLoading }) { const visibleSites = profile.label === 'Field Engineer' ? siteData.filter((site) => site.name === 'Duliajan') : siteData; return <div className="site-card"><div className="card-title"><span><MapPin size={17} /> Highest priority sites</span><span className="muted">{sitesLoading ? 'Loading live data' : profile.label === 'Field Engineer' ? 'Assigned site' : 'SIF density'}</span></div>{visibleSites.slice(0, 4).map((site) => <div className="site-row" key={site.name}><div className={`site-rank ${site.tone}`}>{site.name.slice(0, 2).toUpperCase()}</div><div className="site-details"><strong>{site.name}</strong><span>{site.region} · {site.rule}</span></div><div className="site-score"><b>{Math.round(site.sif / site.reports * 100)}%</b><small>{site.sif} cases</small></div></div>)}</div>; }
 function ActivityCard() { return <div className="activity-card"><div className="card-title"><span><BarChart3 size={17} /> Activity risk ranking</span><span className="muted">SIF density index</span></div>{activities.map(([activity, value, rule]) => <div className="activity-row" key={activity}><div><strong>{activity}</strong><span>{rule}</span></div><div className="bar"><i className="green" style={{ width: `${value}%` }} /></div><b>{value}</b></div>)}</div>; }
 function RulesView() { return <div className="rules-view">{rules.map(([rule, value, note]) => <div className="rule-detail" key={rule}><span className="rule-icon"><LockKeyhole size={15} /></span><div><strong>{rule}</strong><p>{note}</p></div><b>{value}%</b></div>)}</div>; }
-function NewsRail({ navigate }) { return <section className="news-rail reveal"><div className="news-heading"><div><p className="eyebrow">WHAT'S NEW</p><h3>Safety intelligence updates</h3></div><button onClick={() => navigate('analyzer')}>View all <ArrowUpRight size={15} /></button></div><div className="news-grid"><article><span>PRIORITY ALERT · RAJASTHAN</span><h4>Bypassed safety controls detected at RJ-12 well</h4><p>Immediate review assigned to the statutory safety queue.</p></article><article><span>MODEL UPDATE · FY 2025-26</span><h4>3,000 reports mapped to six Life-Saving Rules</h4><p>Evidence-led triage is active across field operations.</p></article><article><span>FIELD FOCUS · DULIAJAN</span><h4>Energy Isolation is the leading precursor signal</h4><p>Open the analyzer to test a report from your site.</p></article></div></section>; }
+function NewsRail({ navigate }) {
+  const newsItems = [
+    { tag: 'PRIORITY ALERT · RAJASTHAN', severity: 'critical', date: '09 Sep 2026', title: 'Bypassed safety controls detected at RJ-12 well', body: 'Immediate statutory review assigned. SIF score: 94. Life-Saving Rule: Bypassing Safety Controls.', cta: 'Review case' },
+    { tag: 'MODEL UPDATE · FY 2025-26', severity: 'info', date: '05 Sep 2026', title: '3,000 HSSE reports mapped to six Life-Saving Rules', body: 'NLP engine achieved 89.3% classification accuracy. 899 SIF-potential cases flagged for intervention.', cta: 'Open analyzer' },
+    { tag: 'FIELD FOCUS · DULIAJAN', severity: 'amber', date: '01 Sep 2026', title: 'Energy Isolation is the leading precursor signal', body: 'Energized equipment and LOTO failures account for 31% of SIF-potential reports. 218 cases reviewed.', cta: 'View analytics' },
+  ];
+  const sevColor = { critical: '#c0392b', amber: '#d99b3c', info: '#00563f' };
+  return (
+    <section className="news-rail reveal">
+      <div className="news-heading">
+        <div><p className="eyebrow">WHAT'S NEW</p><h3>Safety intelligence updates</h3></div>
+        <button onClick={() => navigate('analyzer')}>View all <ArrowUpRight size={15} /></button>
+      </div>
+      <div className="news-grid">
+        {newsItems.map((item) => (
+          <article key={item.title}>
+            <div className="news-meta">
+              <span style={{ borderTopColor: sevColor[item.severity] }}>{item.tag}</span>
+              <time>{item.date}</time>
+            </div>
+            <h4>{item.title}</h4>
+            <p>{item.body}</p>
+            <button className="news-cta" onClick={() => navigate('analyzer')}>{item.cta} <ArrowUpRight size={12} /></button>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+function HeroSection({ navigate, apiLive, heroVideoRef }) {
+  const reports = useCountUp(3000, 1600, true);
+  const sifPct = useCountUp(299, 1400, true);
+  const critCases = useCountUp(270, 1200, true);
+  return (
+    <section className="hero-section reveal" id="top">
+      <div className="hero-copy">
+        <p className="eyebrow"><span /> OIL CORPORATE HSSE DIRECTORATE</p>
+        <h1>Predict risk<br /><em>before it becomes a fatality.</em></h1>
+        <p className="hero-lede">SIF Precursor Intelligence System identifies high-energy exposures in unsafe acts, unsafe conditions and near-miss reports across OIL operations.</p>
+        <div className="hero-actions">
+          <button className="primary-button" onClick={() => navigate('analyzer')}>Analyze a report <ArrowUpRight size={17} /></button>
+          <button className="text-button" onClick={() => navigate('sites')}>View site priorities <MapPin size={16} /></button>
+        </div>
+      </div>
+      <div className="hero-panel">
+        <video ref={heroVideoRef} className="hero-video" autoPlay muted loop playsInline preload="auto" src="/assets/videos/refinery-hero.mp4" onEnded={(e) => { try { e.currentTarget.currentTime = 0; e.currentTarget.play().catch(() => {}); } catch (_) {} }}>
+          <source src="/assets/videos/refinery-hero.mp4" type="video/mp4" />
+        </video>
+        <div className="panel-kicker"><Activity size={16} /> Operational view <span>FY 2025-26</span></div>
+        <div className="hero-number">{reports.toLocaleString()}<small> reports monitored</small></div>
+        <div className="hero-divider" />
+        <div className="hero-mini-grid">
+          <div><strong>{(sifPct / 10).toFixed(1)}%</strong><span>SIF-potential</span></div>
+          <div><strong>06</strong><span>priority rules</span></div>
+          <div><strong>{critCases}</strong><span>critical cases</span></div>
+        </div>
+        <div className="panel-foot"><span className="pulse" /> Model status: {apiLive ? 'connected to OIL API' : 'local demonstration engine'}</div>
+      </div>
+    </section>
+  );
+}
 function OperatingSegments({ navigate }) {
   const segments = [
-    { number: '01', name: 'Upstream', label: 'EXPLORATION & PRODUCTION', text: 'From exploration to production, SPIS helps field teams see high-energy exposures before they become serious events.', image: 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=1500&q=85', rule: 'Energy Isolation · Line of Fire' },
-    { number: '02', name: 'Midstream', label: 'TRANSPORT & STORAGE', text: 'Pipeline, tank and transfer activities are prioritised around permit quality, isolation and confined-space controls.', image: 'https://images.unsplash.com/photo-1516939884455-1445c8652f83?auto=format&fit=crop&w=1500&q=85', rule: 'Hot Work · Confined Space' },
-    { number: '03', name: 'Downstream', label: 'PROCESS OPERATIONS', text: 'Process operations stay safer when barrier failures, authorisation gaps and line-of-fire exposures are visible early.', image: 'https://images.unsplash.com/photo-1565610222536-ef125c59da2e?auto=format&fit=crop&w=1500&q=85', rule: 'Work Authorisation · Safe Lifting' }
+    { number: '01', name: 'Upstream', label: 'EXPLORATION & PRODUCTION', text: 'From exploration to production, SPIS helps field teams see high-energy exposures before they become serious events.', image: 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=1500&q=85', rule: 'Energy Isolation · Line of Fire', sif: 389, reports: 1030 },
+    { number: '02', name: 'Midstream', label: 'TRANSPORT & STORAGE', text: 'Pipeline, tank and transfer activities are prioritised around permit quality, isolation and confined-space controls.', image: 'https://images.unsplash.com/photo-1516939884455-1445c8652f83?auto=format&fit=crop&w=1500&q=85', rule: 'Hot Work · Confined Space', sif: 298, reports: 935 },
+    { number: '03', name: 'Downstream', label: 'PROCESS OPERATIONS', text: 'Process operations stay safer when barrier failures, authorisation gaps and line-of-fire exposures are visible early.', image: 'https://images.unsplash.com/photo-1565610222536-ef125c59da2e?auto=format&fit=crop&w=1500&q=85', rule: 'Work Authorisation · Safe Lifting', sif: 212, reports: 1035 }
   ];
-  return <section className="operating-segments reveal" aria-labelledby="operating-segments-title">
-    <div className="segments-heading"><div><p className="eyebrow">ONE OIL · MANY OPERATING CONTEXTS</p><h3 id="operating-segments-title">Safety intelligence across the value chain</h3></div><p>Scroll to explore the sequence</p></div>
-    <div className="segment-rail" aria-label="Operating segments">
-      {segments.map((segment) => <article className="segment-card" key={segment.name}>
-        <div className="segment-image" style={{ backgroundImage: `linear-gradient(90deg, #003d2ccc 0%, #00563f66 60%, #00563f11 100%), url(${segment.image})` }}><span className="segment-number">{segment.number}</span><span className="segment-label">{segment.label}</span><div className="segment-image-title">{segment.name}</div></div>
-        <div className="segment-copy"><p>{segment.text}</p><span className="segment-rule">{segment.rule}</span><button className="text-button" onClick={() => navigate('info')}>Explore {segment.name} <ArrowUpRight size={15} /></button></div>
-      </article>)}
-    </div>
-    <div className="segment-scroll-hint"><span>01</span><i /><span>03</span></div>
-  </section>;
+  return (
+    <section className="operating-segments reveal" aria-labelledby="operating-segments-title">
+      <div className="segments-heading"><div><p className="eyebrow">ONE OIL · MANY OPERATING CONTEXTS</p><h3 id="operating-segments-title">Safety intelligence across the value chain</h3></div><p>Scroll to explore the sequence</p></div>
+      <div className="segment-rail" aria-label="Operating segments">
+        {segments.map((segment) => (
+          <article className="segment-card" key={segment.name}>
+            <div className="segment-image" style={{ backgroundImage: `linear-gradient(90deg, #003d2ccc 0%, #00563f66 60%, #00563f11 100%), url(${segment.image})` }}>
+              <span className="segment-number">{segment.number}</span>
+              <span className="segment-label">{segment.label}</span>
+              <div className="segment-image-title">{segment.name}</div>
+              <div className="segment-sif-chip">
+                <span>{Math.round(segment.sif / segment.reports * 100)}%</span> SIF density
+              </div>
+            </div>
+            <div className="segment-copy">
+              <p>{segment.text}</p>
+              <div className="segment-stats">
+                <span><b>{segment.sif}</b> SIF cases</span>
+                <span><b>{segment.reports}</b> reports</span>
+              </div>
+              <span className="segment-rule">{segment.rule}</span>
+              <button className="text-button" onClick={() => navigate('info')}>Explore {segment.name} <ArrowUpRight size={15} /></button>
+            </div>
+          </article>
+        ))}
+      </div>
+      <div className="segment-scroll-hint"><span>01</span><i /><span>03</span></div>
+    </section>
+  );
 }
-function ProductVideo({ navigate }) { return <section className="product-video reveal" aria-labelledby="product-video-title"><div className="video-copy"><p className="eyebrow">SEE SPIS IN ACTION</p><h3 id="product-video-title">From field observation<br /><em>to focused intervention.</em></h3><p>Watch how the intelligence layer turns a free-text report into a SIF score, Life-Saving Rule tag and a clear review priority for HSE teams.</p><div className="video-steps"><span><b>01</b> Ingest report</span><span><b>02</b> Detect precursor</span><span><b>03</b> Prioritise action</span></div><button className="text-button" onClick={() => navigate('analyzer')}>Open live analyzer <ArrowUpRight size={16} /></button></div><div className="video-frame"><video controls muted loop playsInline preload="metadata" poster="https://images.unsplash.com/photo-1513828583688-c52646db42da?auto=format&fit=crop&w=1200&q=82" aria-label="Industrial field operations video"><source src="https://cdn.coverr.co/videos/coverr-aerial-view-of-an-oil-refinery-1573/1080p.mp4" type="video/mp4" /><track kind="captions" /></video><div className="video-badge"><span className="pulse" /> Product walkthrough · demo data</div></div></section>; }
+function ProductVideo({ navigate }) {
+  const [activeStep, setActiveStep] = useState(0);
+  const [activeFeed, setActiveFeed] = useState(0);
+  const [scanning, setScanning] = useState(false);
+
+  const feeds = [
+    { label: 'Duliajan MCC', site: 'Duliajan · Upper Assam', rule: 'Energy Isolation', score: 91, risk: 'HIGH', incident: 'Energized MCC panel · No LOTO', color: '#d99b3c' },
+    { label: 'Moran Pipeline', site: 'Moran · Upper Assam', rule: 'Hot Work', score: 78, risk: 'CRITICAL', incident: 'Hot work · Gas test not performed', color: '#c0392b' },
+    { label: 'Jorhat Tank', site: 'Jorhat · Upper Assam', rule: 'Confined Space', score: 64, risk: 'HIGH', incident: 'Tank entry · No atm. testing', color: '#4b7180' },
+  ];
+
+  const steps = [
+    { label: 'Ingest report', icon: '01', desc: 'Field observation narrative ingested from HSSE report system' },
+    { label: 'Detect precursor', icon: '02', desc: 'NLP engine extracts high-energy hazard signals and keyword weights' },
+    { label: 'Prioritise action', icon: '03', desc: 'SIF score, Life-Saving Rule tag and statutory triage SLA assigned' },
+  ];
+
+  const feed = feeds[activeFeed];
+
+  const handleStepClick = (i) => {
+    setActiveStep(i);
+    if (i === 1) { setScanning(true); setTimeout(() => setScanning(false), 1800); }
+  };
+
+  return (
+    <section className="product-video reveal" aria-labelledby="product-video-title">
+      <div className="video-copy">
+        <p className="eyebrow">SEE SPIS IN ACTION</p>
+        <h3 id="product-video-title">From field observation<br /><em>to focused intervention.</em></h3>
+        <p>Watch how the intelligence layer turns a free-text report into a SIF score, Life-Saving Rule tag and a clear review priority for HSE teams.</p>
+        <div className="video-steps-interactive">
+          {steps.map((step, i) => (
+            <button
+              key={step.label}
+              className={`vstep-btn ${activeStep === i ? 'active' : ''}`}
+              onClick={() => handleStepClick(i)}
+            >
+              <span className="vstep-num">{step.icon}</span>
+              <span className="vstep-label">{step.label}</span>
+            </button>
+          ))}
+        </div>
+        <p className="vstep-desc">{steps[activeStep].desc}</p>
+        <button className="text-button" onClick={() => navigate('analyzer')}>Open live analyzer <ArrowUpRight size={16} /></button>
+      </div>
+
+      <div className="video-frame-wrapper">
+        {/* Camera switcher tabs */}
+        <div className="feed-switcher">
+          {feeds.map((f, i) => (
+            <button key={f.label} className={`feed-tab ${activeFeed === i ? 'active' : ''}`} onClick={() => setActiveFeed(i)}>
+              <span className="feed-dot" style={{ background: f.color }} />
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="video-frame">
+          <video
+            key={activeFeed}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            src="/assets/videos/refinery-hero.mp4"
+            onEnded={(e) => { try { e.currentTarget.currentTime = 0; e.currentTarget.play().catch(() => {}); } catch (_) {} }}
+            aria-label="Industrial field operations video"
+          />
+
+          {/* Scanning overlay */}
+          {scanning && <div className="scan-overlay"><div className="scan-line" /></div>}
+
+          {/* Top-left HUD: Live AI status */}
+          <div className="hud-topleft">
+            <span className="hud-live-dot" />
+            <span>AI SCANNER ACTIVE</span>
+            <span className="hud-sep">·</span>
+            <span style={{ color: '#f5bb62' }}>{feed.site}</span>
+          </div>
+
+          {/* Top-right HUD: Inference time */}
+          <div className="hud-topright">
+            <span className="hud-chip">⚡ {activeStep === 0 ? 'INGESTING' : activeStep === 1 ? 'DETECTING' : 'TRIAGED'}</span>
+            <span className="hud-chip">ML inference: 18ms</span>
+          </div>
+
+          {/* Step 01 Overlay — Incident feed */}
+          {activeStep === 0 && (
+            <div className="hud-overlay step-01">
+              <span className="hud-eyebrow">FIELD OBSERVATION · INGESTED</span>
+              <p className="hud-incident">"{feed.incident}"</p>
+              <div className="hud-meta"><span>Report type: Near Miss</span><span>Site: {feed.site}</span></div>
+            </div>
+          )}
+
+          {/* Step 02 Overlay — Keyword extraction */}
+          {activeStep === 1 && (
+            <div className="hud-overlay step-02">
+              <span className="hud-eyebrow">NLP HAZARD EXTRACTION</span>
+              <div className="hud-keywords">
+                {feed.incident.toLowerCase().split(' ').filter(w => w.length > 3).slice(0, 4).map((w, i) => (
+                  <span key={i} className="hud-keyword">{w.replace(/[·.,]/g,'')}</span>
+                ))}
+              </div>
+              <div className="hud-bar-row">
+                <span>SIF confidence</span>
+                <div className="hud-bar"><div className="hud-bar-fill" style={{ width: `${feed.score}%`, background: feed.color }} /></div>
+                <b>{feed.score}%</b>
+              </div>
+            </div>
+          )}
+
+          {/* Step 03 Overlay — SIF classification result */}
+          {activeStep === 2 && (
+            <div className="hud-overlay step-03">
+              <span className="hud-eyebrow">CLASSIFICATION RESULT</span>
+              <div className="hud-result-row">
+                <div className="hud-result-block">
+                  <span>SIF Score</span>
+                  <strong style={{ color: feed.color }}>{feed.score}<small>/100</small></strong>
+                </div>
+                <div className="hud-result-block">
+                  <span>Risk Level</span>
+                  <strong style={{ color: feed.color }}>{feed.risk}</strong>
+                </div>
+                <div className="hud-result-block">
+                  <span>Life-Saving Rule</span>
+                  <strong>{feed.rule}</strong>
+                </div>
+                <div className="hud-result-block">
+                  <span>Triage SLA</span>
+                  <strong style={{ color: '#4aba90' }}>14 min</strong>
+                </div>
+              </div>
+              <div className="hud-oisd">OISD-GDN-166 · Statutory review assigned</div>
+            </div>
+          )}
+
+          {/* Bottom badge */}
+          <div className="video-badge">
+            <span className="pulse" /> OIL SPIS · Live AI Classification Engine
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
 function SitePriorities({ profile }) { const visibleSites = profile.label === 'Field Engineer' ? sites.filter((site) => site.name === 'Duliajan') : sites; return <div className="full-panel"><div className="panel-intro"><div><p className="eyebrow">INTERVENTION QUEUE</p><h3>Ranked by SIF-precursor density</h3></div><span className="date-chip">Updated 09 Sep 2026</span></div>{visibleSites.map((site, index) => <div className="priority-row" key={site.name}><b className="priority-number">0{index + 1}</b><div className={`site-rank ${site.tone}`}>{site.name.slice(0, 2).toUpperCase()}</div><div className="site-details"><strong>{site.name}</strong><span>{site.region} operations</span></div><div className="priority-rule"><span>Leading rule</span><b>{site.rule}</b></div><div className="priority-density"><b>{Math.round(site.sif / site.reports * 100)}%</b><span>{site.sif} / {site.reports} reports</span></div></div>)}</div>; }
 function GovernanceView() { return <div className="governance-grid"><div className="full-panel"><div className="panel-intro"><div><p className="eyebrow">DIRECTORATE OVERSIGHT</p><h3>Statutory review queue</h3></div><span className="date-chip">Restricted view</span></div>{[['Rajasthan RJ-12', 'Bypassed safety controls', 'Immediate review'], ['Moran GGS', 'Hot work without gas test', 'Pending sign-off'], ['Duliajan MCC', 'Isolation not verified', 'Action assigned']].map(([site, issue, status]) => <div className="audit-row" key={site}><div><strong>{site}</strong><span>{issue}</span></div><b>{status}</b></div>)}</div><div className="full-panel audit-summary"><div className="card-title"><span><ShieldCheck size={17} /> Compliance summary</span></div><div className="audit-stat"><strong>94%</strong><span>review SLA met</span></div><div className="audit-stat"><strong>18</strong><span>open corrective actions</span></div><div className="audit-stat"><strong>06</strong><span>rules under observation</span></div></div></div>; }
 function Analyzer({ report, setReport, result, loading, analyzeReport }) { return <div className="analyzer-layout"><form className="analyzer-form" onSubmit={analyzeReport}><div className="panel-intro"><div><p className="eyebrow">DEMO ANALYSIS</p><h3>Analyze an HSSE report</h3></div><span className="date-chip"><Gauge size={14} /> NLP classifier</span></div><label htmlFor="report">Observation narrative</label><textarea id="report" value={report} onChange={(event) => setReport(event.target.value)} placeholder="Paste an unsafe-act, unsafe-condition or near-miss report..." /><div className="sample-row"><span>Try a sample</span>{sampleReports.map((sample, index) => <button type="button" key={sample} onClick={() => setReport(sample)}>0{index + 1}</button>)}</div><button className="primary-button analyze-button" disabled={loading}>{loading ? 'Analyzing...' : 'Analyze Report'} <Sparkles size={16} /></button></form><div className={result ? 'result-panel ready' : 'result-panel'}>{result ? <><div className="result-status"><div className={result.sif_potential ? 'result-icon critical' : 'result-icon safe'}>{result.sif_potential ? <AlertTriangle /> : <CheckCircle2 />}</div><div><span>Classification · Demo data</span><h3>{result.sif_potential ? 'SIF-potential detected' : 'Non-SIF-potential'}</h3></div><strong>{result.sif_score}<small>/100</small></strong></div><div className="result-rule"><span>Primary Life-Saving Rule</span><b>{result.life_saving_rules?.[0] || 'Unclassified'}</b></div><div className="result-factors"><span>Signals found</span>{(result.precursor_factors || []).slice(0, 4).map((factor) => <em key={factor}>{factor}</em>)}</div><div className="review-note"><Flame size={16} /> Review queue: {result.sif_potential ? 'priority intervention recommended' : 'routine observation follow-up'}</div></> : <div className="empty-result"><Sparkles size={26} /><h3>Your triage result will appear here</h3><p>Submit a report to see the SIF score, precursor signals and mapped Life-Saving Rule.</p></div>}</div></div>; }
