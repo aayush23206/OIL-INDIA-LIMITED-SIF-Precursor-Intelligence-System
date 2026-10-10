@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Activity, AlertTriangle, ArrowLeft, ArrowUpRight, BarChart3, CheckCircle2, ChevronDown, ChevronRight, FileText, Flame, Gauge, LockKeyhole, MapPin, ShieldCheck, Siren, Sparkles, Target, Upload } from 'lucide-react';
 import './styles.css';
+import oilLogo from '../oil-logo.svg';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8000';
 
@@ -275,7 +276,7 @@ function App() {
       <div className="utility-bar"><div className="utility-identity">भारत सरकार | Government of India</div><div className="utility-links"><a className="skip-link" href="#main-content">Skip to Main Content</a><span>A-</span><span>A A+</span><span>English⌄</span></div></div>
       <header className="site-header">
         <div className="header-inner">
-          <button className="brand brand-button" onClick={() => navigate('overview')} aria-label="Oil India Limited home"><img className="oil-logo" src="/oil-logo.svg" alt="Oil India Limited emblem" /><div><strong>OIL INDIA LIMITED</strong><small>Conquering Newer Horizons</small></div></button>
+          <button className="brand brand-button" onClick={() => navigate('overview')} aria-label="Oil India Limited home"><img className="oil-logo" src={oilLogo} alt="Oil India Limited emblem" /><div><strong>OIL INDIA LIMITED</strong><small>Conquering Newer Horizons</small></div></button>
           <nav className="main-nav" aria-label="Primary navigation">
             {Object.entries(navGroups).map(([label, items]) => <div className={`nav-dropdown ${openMenu === label ? 'menu-open' : ''}`} key={label} onMouseEnter={() => setOpenMenu(label)} onMouseLeave={() => setOpenMenu(null)}><button className="nav-link" onClick={() => setOpenMenu(openMenu === label ? null : label)} aria-expanded={openMenu === label}>{label}<ChevronDown size={13} /></button>{openMenu === label && <div className="dropdown-menu">{items.map((item) => <button key={item} onClick={() => selectMenuItem(item)}>{item}<ChevronRight size={14} /></button>)}</div>}</div>)}
           </nav>
