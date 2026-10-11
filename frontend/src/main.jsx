@@ -313,7 +313,7 @@ function App() {
         </div>
         <div className="footer-spis">
           <span className="footer-spis-badge"><Sparkles size={13} /> SPIS</span>
-          <span>SIF Precursor Intelligence System · Built for Smart India Hackathon 2024</span>
+          <span>SIF Precursor Intelligence System · Built for Smart India Hackathon 2026</span>
           <div className="footer-spis-links">
             <button onClick={() => {}} aria-label="GitHub repository">⌥ GitHub</button>
             <button onClick={() => {}} aria-label="API documentation">⌘ API Docs</button>
