@@ -12,7 +12,8 @@ license: mit
 # OIL India — SIF Precursor Intelligence System (SPIS)
 ### AI/NLP Engine for Detecting Serious Injury & Fatality Precursors in HSSE Reports
 
-> **Smart India Hackathon 2025 · Oil India Limited · HSSE Digital Intelligence**
+> 🌐 **Live Web Application**: [https://oil-india-limited-sif-precursor-int.vercel.app/#overview](https://oil-india-limited-sif-precursor-int.vercel.app/#overview)  
+> **Smart India Hackathon 2026 · Oil India Limited · HSSE Digital Intelligence**  
 > Compliant with **OISD-GDN-166**, **DGMS Statutory Triage**, and **IOGP Life-Saving Rules**
 
 ---
@@ -45,7 +46,14 @@ from Oil India Limited field operations and automatically:
 
 ## How to Run
 
-### Option A -- Offline Demo (No Python Required)
+### Option A -- Live Hosted Demo (Instant Access)
+
+Open the live hosted web application directly in your browser:
+👉 **[https://oil-india-limited-sif-precursor-int.vercel.app/#overview](https://oil-india-limited-sif-precursor-int.vercel.app/#overview)**
+
+---
+
+### Option B -- Offline Demo (No Python Required)
 
 ```
 frontend/index.html
@@ -54,7 +62,7 @@ frontend/index.html
 Double-click index.html in Windows Explorer. No server, no Python, no npm.
 Runs fully offline using the built-in JS NLP engine and 50 pre-labelled seed reports.
 
-### Option B -- Live ML Backend (Recommended)
+### Option C -- Live ML Backend (Recommended)
 
 **Step 1: Install dependencies**
 ```bash
@@ -276,7 +284,7 @@ SIH pro 2/
 
 ---
 
-*Oil India Limited · HSSE Digital Intelligence · Smart India Hackathon 2025*
+*Oil India Limited · HSSE Digital Intelligence · Smart India Hackathon 2026*
 *Prototype v2.0.0-dedup-honest · Built: September 2026*
 
 > **WARNING:** Accuracy figures reflect synthetic template data only.
